@@ -22,10 +22,7 @@
     <div class="dropdown">
         <label for="birdSelect">Select Birds:</label>
         <select id="birdSelect" multiple onchange="updateMarkers()">
-            <option value="Species A">Species A</option>
-            <option value="Species B">Species B</option>
-            <option value="Species C">Species C</option>
-            <option value="Species D">Species D</option>
+            <!-- Options will be populated dynamically -->
         </select>
     </div>
     
@@ -42,28 +39,38 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Sample data for markers
-        const birdData = [
-            { lat: -9.19, lon: -75.0152, species: "Species A" },
-            { lat: -9.20, lon: -75.0160, species: "Species B" },
-            { lat: -9.21, lon: -75.0170, species: "Species C" },
-            { lat: -9.22, lon: -75.0180, species: "Species D" }
-        ];
-
         // Store markers for filtering
         var markers = [];
 
-        // Load markers onto the map
-        function loadMarkers() {
-            birdData.forEach(bird => {
-                const marker = L.marker([bird.lat, bird.lon]).addTo(map)
-                    .bindPopup(bird.species);
-                markers.push({ marker: marker, species: bird.species });
-            });
-        }
+        // Load CSV data and add markers
+        fetch('data.csv') // Make sure to replace this with your actual CSV file path
+            .then(response => response.text())
+            .then(csvText => {
+                const rows = csvText.split('\n').slice(1);
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    const lat = parseFloat(cols[0]);
+                    const lon = parseFloat(cols[1]);
+                    const species = cols[2].trim();
 
-        // Call the function to load markers
-        loadMarkers();
+                    // Create marker and add to map
+                    const marker = L.marker([lat, lon]).addTo(map)
+                        .bindPopup(species);
+
+                    // Store marker and species for filtering
+                    markers.push({ marker: marker, species: species });
+
+                    // Add option to the dropdown if not already present
+                    if (!document.getElementById(species)) {
+                        const option = document.createElement('option');
+                        option.value = species;
+                        option.id = species;
+                        option.textContent = species;
+                        document.getElementById('birdSelect').appendChild(option);
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading CSV:', error));
 
         // Update markers based on selected species
         function updateMarkers() {
@@ -84,7 +91,9 @@
                 });
             } else {
                 // If no selection, add all markers back
-                loadMarkers();
+                markers.forEach(item => {
+                    item.marker.addTo(map);
+                });
             }
         }
     </script>
