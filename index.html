@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birds Map</title>
+    <link rel="stylesheet" href="leaflet.css" />
+    <style>
+        #map { height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>Birds Map</h1>
+    <div id="map"></div>
+    <script src="leaflet.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([-9.19, -75.0152], 5); // Set to Peru's coordinates
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Load CSV data and add markers
+        fetch('data.csv') // Reference the local CSV file
+            .then(response => response.text())
+            .then(csvText => {
+                const rows = csvText.split('\n').slice(1); // Skip header
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    const lat = parseFloat(cols[0]); // Adjust index based on your CSV structure
+                    const lon = parseFloat(cols[1]);
+                    const species = cols[2]; // Adjust index based on your CSV structure
+
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup(species);
+                });
+            });
+    </script>
+    <script>
+        // Register service worker for offline capabilities
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('Service Worker Registration Failed', err));
+        }
+    </script>
+</body>
+</html>
+
