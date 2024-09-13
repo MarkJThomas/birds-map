@@ -4,18 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birds Map</title>
-    <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map { height: 600px; }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            z-index: 1;
+        }
+        .dropdown-content label {
+            display: block;
+            padding: 8px;
+            cursor: pointer;
+        }
+        .dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+        .show { display: block; }
+        .dropdown-toggle {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background-color: #fff;
+        }
     </style>
 </head>
 <body>
     <h1>Birds Map</h1>
+    
+    <div class="dropdown">
+        <button class="dropdown-toggle" onclick="toggleDropdown()">Select Birds</button>
+        <div id="birdDropdown" class="dropdown-content">
+            <label><input type="checkbox" value="Species A"> Species A</label>
+            <label><input type="checkbox" value="Species B"> Species B</label>
+            <label><input type="checkbox" value="Species C"> Species C</label>
+            <label><input type="checkbox" value="Species D"> Species D</label>
+        </div>
+    </div>
+    
     <div id="map"></div>
-    <script src="leaflet.js"></script>
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Initialize the map
-        var map = L.map('map').setView([-12.8994,-71.4053], 15); // Set to Peru's coordinates
+        var map = L.map('map').setView([-9.19, -75.0152], 12);
 
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -23,30 +63,42 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Load CSV data and add markers
-        fetch('data.csv') // Reference the local CSV file
-            .then(response => response.text())
-            .then(csvText => {
-                const rows = csvText.split('\n').slice(1); // Skip header
-                rows.forEach(row => {
-                    const cols = row.split(',');
-                    const lat = parseFloat(cols[0]); // Adjust index based on your CSV structure
-                    const lon = parseFloat(cols[1]);
-                    const species = cols[2]; // Adjust index based on your CSV structure
+        // Sample data for markers
+        const birdData = [
+            { lat: -9.19, lon: -75.0152, species: "Species A" },
+            { lat: -9.20, lon: -75.0160, species: "Species B" },
+            { lat: -9.21, lon: -75.0170, species: "Species C" },
+            { lat: -9.22, lon: -75.0180, species: "Species D" }
+        ];
 
-                    L.marker([lat, lon]).addTo(map)
-                        .bindPopup(species);
-                });
+        // Load markers onto the map
+        function loadMarkers() {
+            birdData.forEach(bird => {
+                L.marker([bird.lat, bird.lon]).addTo(map)
+                    .bindPopup(bird.species);
             });
-    </script>
-    <script>
-        // Register service worker for offline capabilities
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('Service Worker Registered'))
-                .catch(err => console.log('Service Worker Registration Failed', err));
+        }
+
+        // Call the function to load markers
+        loadMarkers();
+
+        // Toggle dropdown visibility
+        function toggleDropdown() {
+            document.getElementById("birdDropdown").classList.toggle("show");
+        }
+
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-toggle')) {
+                const dropdowns = document.getElementsByClassName("dropdown-content");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    const openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
         }
     </script>
 </body>
 </html>
-
