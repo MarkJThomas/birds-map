@@ -8,32 +8,11 @@
     <style>
         #map { height: 600px; }
         .dropdown {
-            position: relative;
-            display: inline-block;
+            margin-bottom: 10px;
+        }
+        #birdSelect {
             width: 100%;
-        }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
-            z-index: 1;
-        }
-        .dropdown-content label {
-            display: block;
-            padding: 8px;
-            cursor: pointer;
-        }
-        .dropdown-content label:hover {
-            background-color: #f1f1f1;
-        }
-        .show { display: block; }
-        .dropdown-toggle {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            background-color: #fff;
+            height: auto; /* Adjust height for better visibility */
         }
     </style>
 </head>
@@ -41,13 +20,13 @@
     <h1>Birds Map</h1>
     
     <div class="dropdown">
-        <button class="dropdown-toggle" onclick="toggleDropdown()">Select Birds</button>
-        <div id="birdDropdown" class="dropdown-content">
-            <label><input type="checkbox" value="Species A"> Species A</label>
-            <label><input type="checkbox" value="Species B"> Species B</label>
-            <label><input type="checkbox" value="Species C"> Species C</label>
-            <label><input type="checkbox" value="Species D"> Species D</label>
-        </div>
+        <label for="birdSelect">Select Birds:</label>
+        <select id="birdSelect" multiple onchange="updateMarkers()">
+            <option value="Species A">Species A</option>
+            <option value="Species B">Species B</option>
+            <option value="Species C">Species C</option>
+            <option value="Species D">Species D</option>
+        </select>
     </div>
     
     <div id="map"></div>
@@ -71,32 +50,41 @@
             { lat: -9.22, lon: -75.0180, species: "Species D" }
         ];
 
+        // Store markers for filtering
+        var markers = [];
+
         // Load markers onto the map
         function loadMarkers() {
             birdData.forEach(bird => {
-                L.marker([bird.lat, bird.lon]).addTo(map)
+                const marker = L.marker([bird.lat, bird.lon]).addTo(map)
                     .bindPopup(bird.species);
+                markers.push({ marker: marker, species: bird.species });
             });
         }
 
         // Call the function to load markers
         loadMarkers();
 
-        // Toggle dropdown visibility
-        function toggleDropdown() {
-            document.getElementById("birdDropdown").classList.toggle("show");
-        }
+        // Update markers based on selected species
+        function updateMarkers() {
+            const selectedOptions = Array.from(document.getElementById("birdSelect").selectedOptions);
+            const selectedSpecies = selectedOptions.map(option => option.value);
 
-        // Close the dropdown if the user clicks outside of it
-        window.onclick = function(event) {
-            if (!event.target.matches('.dropdown-toggle')) {
-                const dropdowns = document.getElementsByClassName("dropdown-content");
-                for (let i = 0; i < dropdowns.length; i++) {
-                    const openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
+            // Clear all markers from the map
+            markers.forEach(item => {
+                map.removeLayer(item.marker);
+            });
+
+            // Add back only the selected species markers
+            if (selectedSpecies.length > 0) {
+                markers.forEach(item => {
+                    if (selectedSpecies.includes(item.species)) {
+                        item.marker.addTo(map);
                     }
-                }
+                });
+            } else {
+                // If no selection, add all markers back
+                loadMarkers();
             }
         }
     </script>
