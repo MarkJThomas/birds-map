@@ -14,6 +14,9 @@
             width: 100%;
             height: auto; /* Adjust height for better visibility */
         }
+        #summary {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -27,7 +30,8 @@
     </div>
     
     <div id="map"></div>
-    
+    <div id="summary"></div> <!-- Summary section -->
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Initialize the map
@@ -42,58 +46,74 @@
         // Store markers for filtering
         var markers = [];
 
-// Load CSV data and add markers
-fetch('data.csv') // Make sure to replace this with your actual CSV file path
-    .then(response => response.text())
-    .then(csvText => {
-        const rows = csvText.split('\n').slice(1);
-        console.log("CSV Rows:", rows); // Debugging: Log CSV rows
-        rows.forEach(row => {
-            const cols = row.split(',');
-            const lat = parseFloat(cols[0]);
-            const lon = parseFloat(cols[1]);
-            const species = cols[2] ? cols[2].trim() : '';
+        // Load CSV data and add markers
+        fetch('data.csv') // Make sure to replace this with your actual CSV file path
+            .then(response => response.text())
+            .then(csvText => {
+                const rows = csvText.split('\n').slice(1);
+                console.log("CSV Rows:", rows); // Debugging: Log CSV rows
 
-            if (!isNaN(lat) && !isNaN(lon) && species) { // Check for valid data
-                // Create marker and add to map
-                const marker = L.marker([lat, lon]).addTo(map)
-                    .bindPopup(species);
+                const speciesSet = new Set();
+                const genusSet = new Set();
 
-                // Store marker and species for filtering
-                markers.push({ marker: marker, species: species });
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    const lat = parseFloat(cols[0]);
+                    const lon = parseFloat(cols[1]);
+                    const species = cols[2] ? cols[2].trim() : '';
+                    const genus = cols[3] ? cols[3].trim() : ''; // Assuming genus is the fourth column
 
-                // Add option to the dropdown if not already present
-                if (!document.getElementById(species)) {
-                    const option = document.createElement('option');
-                    option.value = species;
-                    option.id = species;
-                    option.textContent = species;
-                    document.getElementById('birdSelect').appendChild(option);
-                }
-            } else {
-                console.warn("Invalid data row:", row); // Debugging: Log invalid rows
-            }
-        });
-    })
-    .catch(error => console.error('Error loading CSV:', error));
+                    if (!isNaN(lat) && !isNaN(lon) && species) { // Check for valid data
+                        // Create marker and add to map
+                        const marker = L.marker([lat, lon]).addTo(map)
+                            .bindPopup(species);
 
-// Load and add GeoJSON data with custom styling
-fetch('manu-bio.geojson')
-    .then(response => response.json())
-    .then(geojsonData => {
-        console.log("GeoJSON Data:", geojsonData); // Debugging: Log GeoJSON data
-        L.geoJSON(geojsonData, {
-            style: function(feature) {
-                return {
-                    color: '#ff7800', // Line color
-                    weight: 5,       // Line thickness
-                    opacity: 0.65    // Line opacity
-                };
-            }
-        }).addTo(map);
-    })
-    .catch(error => console.error('Error loading GeoJSON:', error));
+                        // Store marker and species for filtering
+                        markers.push({ marker: marker, species: species });
 
+                        // Add option to the dropdown if not already present
+                        if (!document.getElementById(species)) {
+                            const option = document.createElement('option');
+                            option.value = species;
+                            option.id = species;
+                            option.textContent = species;
+                            document.getElementById('birdSelect').appendChild(option);
+                        }
+
+                        // Add to sets for counting
+                        speciesSet.add(species);
+                        genusSet.add(genus);
+                    } else {
+                        console.warn("Invalid data row:", row); // Debugging: Log invalid rows
+                    }
+                });
+
+                // Display the summary
+                const summaryDiv = document.getElementById('summary');
+                summaryDiv.innerHTML = `
+                    <h3>Summary</h3>
+                    <p>Number of Species: ${speciesSet.size}</p>
+                    <p>Number of Genera: ${genusSet.size}</p>
+                `;
+            })
+            .catch(error => console.error('Error loading CSV:', error));
+
+        // Load and add GeoJSON data with custom styling
+        fetch('manu-bio.geojson')
+            .then(response => response.json())
+            .then(geojsonData => {
+                console.log("GeoJSON Data:", geojsonData); // Debugging: Log GeoJSON data
+                L.geoJSON(geojsonData, {
+                    style: function(feature) {
+                        return {
+                            color: '#ff7800', // Line color
+                            weight: 5,       // Line thickness
+                            opacity: 0.65    // Line opacity
+                        };
+                    }
+                }).addTo(map);
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
 
         // Update markers based on selected species
         function updateMarkers() {
